@@ -9,18 +9,21 @@ import SwiftUI
 
 struct ContentView: View {
     
-    @State private var mixprofileName: String = "MixprofileName"
-    @State private var phaseName: String = "Mix-Phase"
-    @State private var cycleCount: Int = 2
     @State private var isRunning:  Bool = false
+    @StateObject private var countdownTimer: CountdownTimer
+    @State private var selectedProfile: Mixprofile
     
-    //selectedOption mit Datentyp Mixprofile ändern
-    @State var selectedOption: String = "Test"
-    
-    //List mit Mixprofil-Liste ersetzen
-    let list = ["Test, 1", "Test, 2", "Test, 3"]
-    
-    @State var mixProfile = Mixprofile(name: "Default 30/10", mixDuration: 5, pauseDuration: 1, cycleCount: 3)
+    let mixprofiles: [Mixprofile] = [
+        Mixprofile(name: "Default", mixDuration: 30, pauseDuration: 5, cycleCount: 7),
+        Mixprofile(name: "Lang", mixDuration: 60, pauseDuration: 10, cycleCount: 2),
+        Mixprofile(name: "Kurz", mixDuration: 5, pauseDuration: 2, cycleCount: 3)
+    ]
+
+    init () {
+        let initialMixProfile = Mixprofile(name: "Default", mixDuration: 30, pauseDuration: 5, cycleCount: 3)
+        _selectedProfile = State(initialValue: initialMixProfile)
+        _countdownTimer = StateObject(wrappedValue: CountdownTimer(mixprofile: initialMixProfile))
+    }
     
     var body: some View {
         VStack {
@@ -34,23 +37,28 @@ struct ContentView: View {
                     }
 
                 }
-                Picker("",selection: $selectedOption) {
-                    ForEach(list, id: \.self) { item in
-                        Text(item)
+                Picker("",selection: $selectedProfile) {
+                    ForEach(mixprofiles, id: \.name) { profile in
+                        Text(profile.name).tag(profile)
                             .font(.headline)
                     }
+                }
+                .onChange(of: selectedProfile) {
+                    countdownTimer.updateProfile(to: selectedProfile)
+                    isRunning = false
                 }
                 .pickerStyle(MenuPickerStyle())
                 .frame(maxWidth: 250)
                 .padding(20)
             }
             
-            Text("Wiederholung: \(cycleCount)")
+            Text("Phase: \(countdownTimer.mixprofile.counter)/\(countdownTimer.mixprofile.cycleCount) ")
+                .padding(.bottom, 20)
                 .font(.headline)
                 
             ZStack {
                 if isRunning {
-                    CircularCountdownView(cycleCount: $mixProfile.cycleCount, mixDuration: $mixProfile.mixDuration, pauseDuration: $mixProfile.pauseDuration)
+                    CircularCountdownView(countdownTimer: countdownTimer)
                         .padding(20)
                 } else {
                     Button {
@@ -62,7 +70,7 @@ struct ContentView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .frame(minWidth: 200, minHeight: 250)
+            .frame(minWidth: 150, minHeight: 250)
             
         }
         .padding(20)

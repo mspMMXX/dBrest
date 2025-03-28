@@ -9,88 +9,63 @@ import SwiftUI
 
 struct CircularCountdownView: View {
     
-    @State private var progress: CGFloat = 0.0
-    @State private var remainingTime: Int = 0
-    @State private var timer: Timer?
-    @State var mixPhase: String = "Mix"
-    
-    @Binding var cycleCount: Int
-    @Binding var mixDuration: Int
-    @Binding var pauseDuration: Int
+    @ObservedObject var countdownTimer: CountdownTimer
+    @State private var isPaused: Bool = false
 
     var body: some View {
-        ZStack {
-            //Background-Circle 
-            Circle()
-                .stroke(Color.gray.opacity(0.2), lineWidth: 30)
-            
-            //Progress-Circle
-            Circle()
-                .trim(from: 0.0, to: progress)
-                .stroke(Color.green, style: StrokeStyle(lineWidth: 30, lineCap: .round))
-                .rotationEffect(.degrees(90))
-            
-            //Text
-            VStack {
-                Text(mixPhase)
-                Text("\(remainingTime)s")
-                    .font(.largeTitle)
-                    .bold()
+        VStack {
+            ZStack {
+                Circle()
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 30)
+                
+                Circle()
+                    .trim(from: 0.0, to: countdownTimer.progress)
+                    .stroke(countdownTimer.isMixing ? Color.green : Color.red, style: StrokeStyle(lineWidth: 30, lineCap: .round))
+                    .rotationEffect(.degrees(90))
+                
+                VStack {
+                    Text(countdownTimer.mixPhase)
+                    Text("\(countdownTimer.remainingTime)s")
+                        .font(.largeTitle)
+                        .bold()
+                }
             }
-        }
-        .frame(width: 200, height: 200)
-        .onAppear {
-            startTimer()
-        }
-        .onDisappear {
-            timer?.invalidate()
-        }
-    }
-    func startTimer() {
-        runCycle(index: 1)
-    }
-
-    func runCycle(index: Int) {
-        if index > cycleCount {
-            mixPhase = "Fertig"
-            return
-        }
-
-        mixPhase = "Mix"
-        remainingTime = mixDuration
-        progress = 0
-        var elapsed = 0
-        let mixStep = 1.0 / CGFloat(mixDuration)
-
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { t in
-            elapsed += 1
-            remainingTime = mixDuration - elapsed
-            progress = CGFloat(elapsed) * mixStep
-
-            if elapsed >= mixDuration {
-                t.invalidate()
-                runPauseCycle(index: index)
+            .frame(width: 200, height: 200)
+            .onAppear {
+                countdownTimer.startTimer()
             }
-        }
-    }
-
-    func runPauseCycle(index: Int) {
-        mixPhase = "Pause"
-        remainingTime = pauseDuration
-        progress = 0
-        var elapsed = 0
-        let pauseStep = 1.0 / CGFloat(pauseDuration)
-        
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { t in
-            elapsed += 1
-            remainingTime = pauseDuration - elapsed
-            progress = CGFloat(elapsed) * pauseStep
-            
-            if elapsed >= pauseDuration {
-                t.invalidate()
-                runCycle(index: index + 1)
+            .onDisappear {
+                countdownTimer.timer?.invalidate()
             }
+            HStack {
+                Button {
+                    if !isPaused {
+                        countdownTimer.pauseTimer()
+                        isPaused = true
+                    } else {
+                        countdownTimer.resumeTimer()
+                        isPaused = false
+                    }
+                } label: {
+                    if !isPaused {
+                        Image(systemName: "pause.fill")
+                    } else {
+                        Image(systemName: "play.fill")
+                    }
+                }
+                
+                Button {
+                    countdownTimer.stopTimer()
+                } label: {
+                    Image(systemName: "stop.fill")
+                }
+            }
+            .padding(.top, 20)
         }
     }
+}
+
+#Preview {
+    CircularCountdownView(countdownTimer: CountdownTimer(mixprofile: Mixprofile(name: "Defailt", mixDuration: 30, pauseDuration: 30, cycleCount: 2)))
 }
 

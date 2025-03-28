@@ -12,4 +12,5 @@ struct Mixprofile: Hashable {
     var mixDuration: Int
     var pauseDuration: Int
     var cycleCount: Int
+    var counter: Int = 1
 }
