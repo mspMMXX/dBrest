@@ -42,7 +42,7 @@ class CountdownTimer: ObservableObject {
         currentIndex = index
         mixPhase = "Mix"
         isMixing = true
-        let totalTime = mixprofile.mixDuration
+        let totalTime = mixprofile.mixDurationInSeconds
         if !resume { elapsedMixTime = 0 }
         let step = 1.0 / CGFloat(totalTime)
 
@@ -85,17 +85,17 @@ class CountdownTimer: ObservableObject {
     func runPauseCycle(index: Int) {
         mixPhase = "Pause"
         isMixing = false
-        remainingTime = mixprofile.pauseDuration
+        remainingTime = mixprofile.pauseDurationInSeconds
         progress = 0
         var elapsed = 0
-        let pauseStep = 1.0 / CGFloat(mixprofile.pauseDuration)
+        let pauseStep = 1.0 / CGFloat(mixprofile.pauseDurationInSeconds)
         
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { t in
             elapsed += 1
-            self.remainingTime = self.mixprofile.pauseDuration - elapsed
+            self.remainingTime = self.mixprofile.pauseDurationInSeconds - elapsed
             self.progress = CGFloat(elapsed) * pauseStep
             
-            if elapsed >= self.mixprofile.pauseDuration {
+            if elapsed >= self.mixprofile.pauseDurationInSeconds {
                 t.invalidate()
                 self.mixprofile.counter += 1
                 self.runCycle(index: index + 1)
@@ -106,7 +106,7 @@ class CountdownTimer: ObservableObject {
     func updateProfile(to newProfile: Mixprofile) {
         self.mixprofile = newProfile
         self.progress = 0
-        self.remainingTime = newProfile.mixDuration
+        self.remainingTime = newProfile.mixDurationInMinutes
         self.mixPhase = "Mix"
     }
 

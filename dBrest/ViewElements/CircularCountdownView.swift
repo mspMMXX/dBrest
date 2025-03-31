@@ -11,10 +11,12 @@ struct CircularCountdownView: View {
     
     @ObservedObject var countdownTimer: CountdownTimer
     @State private var isPaused: Bool = false
-
+    
     var body: some View {
         VStack {
+            
             ZStack {
+                
                 Circle()
                     .stroke(Color.gray.opacity(0.2), lineWidth: 30)
                 
@@ -24,8 +26,10 @@ struct CircularCountdownView: View {
                     .rotationEffect(.degrees(90))
                 
                 VStack {
+                    
                     Text(countdownTimer.mixPhase)
-                    Text("\(countdownTimer.remainingTime)s")
+                    
+                    Text("\(countdownTimer.remainingTime) Sek.")
                         .font(.largeTitle)
                         .bold()
                 }
@@ -37,7 +41,9 @@ struct CircularCountdownView: View {
             .onDisappear {
                 countdownTimer.timer?.invalidate()
             }
+            
             HStack {
+                
                 Button {
                     if !isPaused {
                         countdownTimer.pauseTimer()
@@ -66,6 +72,6 @@ struct CircularCountdownView: View {
 }
 
 #Preview {
-    CircularCountdownView(countdownTimer: CountdownTimer(mixprofile: Mixprofile(name: "Defailt", mixDuration: 30, pauseDuration: 30, cycleCount: 2)))
+    CircularCountdownView(countdownTimer: CountdownTimer(mixprofile: Mixprofile(name: "Default", mixDurationInMinutes: 5, pauseDurationInMinutes: 2, cycleCount: 4)))
 }
 
