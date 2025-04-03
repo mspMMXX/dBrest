@@ -9,14 +9,14 @@ import SwiftUI
 
 struct MixprofileSettingView: View {
     
-    @State var mixTime: TimeInterval = .five
-    @State var pauseTime: TimeInterval = .five
-    @State var cycleCount: CycleInterval = .one
+    @State var mixTime: TimeValues = .twenty
+    @State var pauseTime: TimeValues = .five
+    @State var cycleCount: CycleValues = .one
     @State var mixProfileName: String = ""
     
     @Binding var showSettings: Bool
     
-    @ObservedObject var mixprofileDataModel: MixProfileDataModel
+    @ObservedObject var mixprofileDataModel: Mixprofiles
     
     var body: some View {
         VStack {
@@ -25,7 +25,7 @@ struct MixprofileSettingView: View {
                 .padding(20)
             
             Picker("Mix:", selection: $mixTime) {
-                ForEach(TimeInterval.allCases) { interval in
+                ForEach(TimeValues.allCases) { interval in
                     Text(interval.label).tag(interval)
                 }
             }
@@ -34,7 +34,7 @@ struct MixprofileSettingView: View {
             .padding(.bottom, 20)
             
             Picker("Pause:", selection: $pauseTime) {
-                ForEach(TimeInterval.allCases) { interval in
+                ForEach(TimeValues.allCases) { interval in
                     Text(interval.label).tag(interval)
                 }
             }
@@ -43,7 +43,7 @@ struct MixprofileSettingView: View {
             .padding(.bottom, 20)
             
             Picker("Wiederholungen:", selection: $cycleCount) {
-                ForEach(CycleInterval.allCases) { interval in
+                ForEach(CycleValues.allCases) { interval in
                     Text(interval.label).tag(interval)
                 }
             }

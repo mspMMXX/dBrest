@@ -5,7 +5,7 @@
 //  Created by Markus Platter on 31.03.25.
 //
 
-enum CycleInterval: Int, CaseIterable, Identifiable {
+enum CycleValues: Int, CaseIterable, Identifiable {
     case one = 1
     case two = 2
     case three = 3

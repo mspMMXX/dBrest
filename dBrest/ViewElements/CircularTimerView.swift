@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct CircularCountdownView: View {
+struct CircularTimerView: View {
     
     @ObservedObject var countdownTimer: CountdownTimer
     @State private var isPaused: Bool = false
@@ -27,9 +27,9 @@ struct CircularCountdownView: View {
                 
                 VStack {
                     
-                    Text(countdownTimer.mixPhase)
+                    Text(countdownTimer.phaseName)
                     
-                    Text("\(countdownTimer.remainingTime) Sek.")
+                    Text("\(countdownTimer.remainingTime / 60) min.")
                         .font(.largeTitle)
                         .bold()
                 }
@@ -72,6 +72,6 @@ struct CircularCountdownView: View {
 }
 
 #Preview {
-    CircularCountdownView(countdownTimer: CountdownTimer(mixprofile: Mixprofile(name: "Default", mixDurationInMinutes: 5, pauseDurationInMinutes: 2, cycleCount: 4)))
+    CircularTimerView(countdownTimer: CountdownTimer(mixprofile: Mixprofile(name: "Default", mixDurationInMinutes: 5, pauseDurationInMinutes: 2, cycleCount: 4)))
 }
 

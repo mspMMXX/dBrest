@@ -7,14 +7,14 @@
 
 import SwiftUI
 
-struct ContentView: View {
+struct MainView: View {
     
     @State private var isRunning:  Bool = false
     @State var showSettings: Bool = false
     @State private var selectedProfile: Mixprofile
     
     @StateObject private var countdownTimer: CountdownTimer
-    @StateObject private var mixprofileList: MixProfileDataModel = MixProfileDataModel()
+    @StateObject private var mixprofileList: Mixprofiles = Mixprofiles()
     
     init () {
         let initialMixProfile = Mixprofile(name: "Default", mixDurationInMinutes: 5, pauseDurationInMinutes: 2, cycleCount: 4)
@@ -39,7 +39,7 @@ struct ContentView: View {
                 
                 Picker("",selection: $selectedProfile) {
                     ForEach(mixprofileList.mixProfiles, id: \.name) { profile in
-                        Text(profile.name).tag(profile)
+                        Text("\(profile.name) \(profile.mixDurationInMinutes) min. \(profile.pauseDurationInMinutes) min. \(profile.cycleCount) cycles").tag(profile)
                             .font(.headline)
                     }
                 }
@@ -58,7 +58,7 @@ struct ContentView: View {
             
             ZStack {
                 if isRunning {
-                    CircularCountdownView(countdownTimer: countdownTimer)
+                    CircularTimerView(countdownTimer: countdownTimer)
                         .padding(20)
                 } else {
                     
@@ -78,5 +78,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    MainView()
 }

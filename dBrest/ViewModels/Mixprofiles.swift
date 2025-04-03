@@ -7,7 +7,7 @@
 
 import Foundation
 
-class MixProfileDataModel: ObservableObject {
+class Mixprofiles: ObservableObject {
     
     @Published var mixProfiles: [Mixprofile] = []
     

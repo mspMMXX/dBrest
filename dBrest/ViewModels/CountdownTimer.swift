@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 class CountdownTimer: ObservableObject {
-    @Published var mixPhase: String = "Mix"
+    @Published var phaseName: String = "Mix"
     @Published var isMixing: Bool = false
     @Published var remainingTime: Int = 0
     @Published var progress: CGFloat = 0
@@ -33,14 +33,14 @@ class CountdownTimer: ObservableObject {
     func runCycle(index: Int, resume: Bool = false) {
         if !resume { currentIndex = index }
         if index > mixprofile.cycleCount {
-            mixPhase = "Ende"
+            phaseName = "Ende"
             isMixing = false
             mixprofile.counter = mixprofile.cycleCount
             return
         }
 
         currentIndex = index
-        mixPhase = "Mix"
+        phaseName = "Mix"
         isMixing = true
         let totalTime = mixprofile.mixDurationInSeconds
         if !resume { elapsedMixTime = 0 }
@@ -65,9 +65,9 @@ class CountdownTimer: ObservableObject {
 
     func resumeTimer() {
         isPaused = false
-        if mixPhase == "Mix" {
+        if phaseName == "Mix" {
             runCycle(index: currentIndex, resume: true)
-        } else if mixPhase == "Pause" {
+        } else if phaseName == "Pause" {
             runPauseCycle(index: currentIndex)
         }
     }
@@ -78,12 +78,12 @@ class CountdownTimer: ObservableObject {
         isPaused = false
         progress = 0
         remainingTime = 0
-        mixPhase = "Gestoppt"
+        phaseName = "Gestoppt"
         currentIndex = 1
     }
 
     func runPauseCycle(index: Int) {
-        mixPhase = "Pause"
+        phaseName = "Pause"
         isMixing = false
         remainingTime = mixprofile.pauseDurationInSeconds
         progress = 0
@@ -107,7 +107,7 @@ class CountdownTimer: ObservableObject {
         self.mixprofile = newProfile
         self.progress = 0
         self.remainingTime = newProfile.mixDurationInMinutes
-        self.mixPhase = "Mix"
+        self.phaseName = "Mix"
     }
 
 }

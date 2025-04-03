@@ -5,7 +5,7 @@
 //  Created by Markus Platter on 31.03.25.
 //
 
-enum TimeInterval: Int, CaseIterable, Identifiable {
+enum TimeValues: Int, CaseIterable, Identifiable {
     case five = 5
     case ten = 10
     case fifteen = 15
