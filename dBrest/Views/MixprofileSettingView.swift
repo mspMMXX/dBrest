@@ -13,6 +13,7 @@ struct MixprofileSettingView: View {
     @State var pauseTime: TimeValues = .five
     @State var cycleCount: CycleValues = .one
     @State var mixProfileName: String = ""
+    @State private var noNameAlertIsShown: Bool = false
     
     @Binding var showSettings: Bool
     
@@ -53,15 +54,29 @@ struct MixprofileSettingView: View {
             .padding(.bottom, 20)
             
             Button {
-                let newMixprofile = Mixprofile(name: mixProfileName, mixDurationInMinutes: mixTime.rawValue, pauseDurationInMinutes: pauseTime.rawValue, cycleCount: cycleCount.rawValue)
-                modelContext.insert(newMixprofile)
-                showSettings = false
-                
+                if mixProfileName != "" {
+                    let newMixprofile = Mixprofile(name: mixProfileName, mixDurationInMinutes: mixTime.rawValue, pauseDurationInMinutes: pauseTime.rawValue, cycleCount: cycleCount.rawValue)
+                    modelContext.insert(newMixprofile)
+                    showSettings = false
+                } else {
+                    noNameAlertIsShown = true
+                }
             } label: {
                 Text("Speichern")
             }
             .padding(.horizontal,20)
             .padding(.bottom, 5)
+            .alert("Kein Name angegeben!", isPresented: $noNameAlertIsShown) {
+                Button {
+                    noNameAlertIsShown = false
+                } label: {
+                    Text("OK")
+                }
+
+            } message: {
+                Text("Bitte geben Sie einen Namen für Ihr Mixprofil an.")
+            }
+
             
             Button {
                 showSettings = false

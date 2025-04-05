@@ -6,6 +6,7 @@
 //
 
 enum TimeValues: Int, CaseIterable, Identifiable {
+    case one = 1
     case five = 5
     case ten = 10
     case fifteen = 15

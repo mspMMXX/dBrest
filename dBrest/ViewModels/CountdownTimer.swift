@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import UserNotifications
 
 class CountdownTimer: ObservableObject {
     @Published var phaseName: String = "Mix"
@@ -34,6 +35,7 @@ class CountdownTimer: ObservableObject {
         if !resume { currentIndex = index }
         if index > mixprofile.cycleCount {
             phaseName = "Ende"
+            notifyPhaseEnded(phaseName: "Cycle")
             isMixing = false
             mixprofile.counter = mixprofile.cycleCount
             return
@@ -41,6 +43,7 @@ class CountdownTimer: ObservableObject {
 
         currentIndex = index
         phaseName = "Mix"
+        notifyPhaseEnded(phaseName: "Pause")
         isMixing = true
         let totalTime = mixprofile.mixDurationInSeconds
         if !resume { elapsedMixTime = 0 }
@@ -84,6 +87,7 @@ class CountdownTimer: ObservableObject {
 
     func runPauseCycle(index: Int) {
         phaseName = "Pause"
+        notifyPhaseEnded(phaseName: "Mix")
         isMixing = false
         remainingTime = mixprofile.pauseDurationInSeconds
         progress = 0
@@ -108,6 +112,19 @@ class CountdownTimer: ObservableObject {
         self.progress = 0
         self.remainingTime = newProfile.mixDurationInMinutes
         self.phaseName = "Mix"
+    }
+    
+    func notifyPhaseEnded(phaseName: String) {
+        let content = UNMutableNotificationContent()
+        content.title = "🔔 \(phaseName) Phase beendet!"
+        content.body = "Die \(phaseName)-Phase ist vorbei"
+        content.sound = .default
+        
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+        
+        UNUserNotificationCenter.current().add(request)
+        
     }
 
 }
