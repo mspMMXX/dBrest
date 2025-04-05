@@ -6,9 +6,12 @@
 //
 
 import Foundation
+import SwiftData
 
-struct Mixprofile: Hashable {
+@Model
+class Mixprofile: Hashable {
     
+    var id: UUID = UUID()
     var mixDurationInMinutes: Int = 5
     var pauseDurationInMinutes: Int = 1
     var name: String

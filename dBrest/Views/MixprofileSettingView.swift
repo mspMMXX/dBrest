@@ -16,7 +16,8 @@ struct MixprofileSettingView: View {
     
     @Binding var showSettings: Bool
     
-    @ObservedObject var mixprofileDataModel: Mixprofiles
+    //SwiftData modelContext - to save the mixprofile
+    @Environment(\.modelContext) var modelContext
     
     var body: some View {
         VStack {
@@ -53,14 +54,23 @@ struct MixprofileSettingView: View {
             
             Button {
                 let newMixprofile = Mixprofile(name: mixProfileName, mixDurationInMinutes: mixTime.rawValue, pauseDurationInMinutes: pauseTime.rawValue, cycleCount: cycleCount.rawValue)
-                mixprofileDataModel.addMixprofileToList(mixprofile: newMixprofile)
+                modelContext.insert(newMixprofile)
                 showSettings = false
                 
             } label: {
                 Text("Speichern")
             }
             .padding(.horizontal,20)
+            .padding(.bottom, 5)
+            
+            Button {
+                showSettings = false
+            } label: {
+                Text("Abbrechen")
+            }
+            .padding(.horizontal,20)
             .padding(.bottom, 20)
+
         }
         .frame(minWidth: 100, minHeight: 100)
     }

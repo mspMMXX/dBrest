@@ -6,15 +6,18 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct MainView: View {
     
     @State private var isRunning:  Bool = false
     @State var showSettings: Bool = false
     @State private var selectedProfile: Mixprofile
-    
+    @State private var showDeleteAlert: Bool = false
     @StateObject private var countdownTimer: CountdownTimer
-    @StateObject private var mixprofileList: Mixprofiles = Mixprofiles()
+    
+    @Query var mixprofiles: [Mixprofile]
+    @Environment(\.modelContext) var modelContext
     
     init () {
         let initialMixProfile = Mixprofile(name: "Default", mixDurationInMinutes: 5, pauseDurationInMinutes: 2, cycleCount: 4)
@@ -33,13 +36,39 @@ struct MainView: View {
                         Image(systemName: "plus.circle")
                     }
                     .sheet(isPresented: $showSettings) {
-                        MixprofileSettingView(showSettings: $showSettings, mixprofileDataModel: mixprofileList)
+                        MixprofileSettingView(showSettings: $showSettings)
                     }
+
+                    Button {
+                        showDeleteAlert = true
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .alert("Löschen?", isPresented: $showDeleteAlert) {
+                        Button {
+                            modelContext.delete(selectedProfile)
+                            if let first = mixprofiles.first {
+                                selectedProfile = first
+                                countdownTimer.updateProfile(to: first)
+                            }
+                            showDeleteAlert = false
+                        } label: {
+                            Text("Löschen")
+                        }
+                        Button {
+                            showDeleteAlert = false
+                        } label: {
+                            Text("Abbrechen")
+                        }
+                    } message: {
+                        Text("Möchten Sie das Mixprofil -\(selectedProfile.name)- wirklich löschen?")
+                    }
+
                 }
                 
-                Picker("",selection: $selectedProfile) {
-                    ForEach(mixprofileList.mixProfiles, id: \.name) { profile in
-                        Text("\(profile.name) \(profile.mixDurationInMinutes) min. \(profile.pauseDurationInMinutes) min. \(profile.cycleCount) cycles").tag(profile)
+                Picker("", selection: $selectedProfile) {
+                    ForEach(mixprofiles, id: \.name) { profile in
+                        Text("\(profile.name) - \(profile.mixDurationInMinutes) min. \(profile.pauseDurationInMinutes) min. \(profile.cycleCount) cycles").tag(profile)
                             .font(.headline)
                     }
                 }
@@ -47,7 +76,7 @@ struct MainView: View {
                     countdownTimer.updateProfile(to: selectedProfile)
                     isRunning = false
                 }
-                .pickerStyle(MenuPickerStyle())
+                .pickerStyle(.menu)
                 .frame(maxWidth: 250)
                 .padding(20)
             }
@@ -71,12 +100,14 @@ struct MainView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .frame(minWidth: 150, minHeight: 250)
+            .frame(minWidth: 450, minHeight: 250)
+        }
+        .onAppear {
+            if let first = mixprofiles.first {
+                selectedProfile = first
+                countdownTimer.updateProfile(to: first)
+            }
         }
         .padding(20)
     }
-}
-
-#Preview {
-    MainView()
 }

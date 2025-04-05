@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct dBrestApp: App {
@@ -13,5 +14,6 @@ struct dBrestApp: App {
         WindowGroup {
             MainView()
         }
+        .modelContainer(for: Mixprofile.self)
     }
 }
