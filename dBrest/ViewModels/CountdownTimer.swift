@@ -10,13 +10,14 @@ import SwiftUI
 import UserNotifications
 
 class CountdownTimer: ObservableObject {
+    
     @Published var phaseName: String = "Mix"
     @Published var isMixing: Bool = false
     @Published var remainingTime: Int = 0
     @Published var progress: CGFloat = 0
     @Published var isPaused: Bool = false
-    private var currentIndex: Int = 1
     
+    private var currentIndex: Int = 1
     private var elapsedMixTime = 0
     private var elapsedPauseTime = 0
 
@@ -37,7 +38,7 @@ class CountdownTimer: ObservableObject {
             phaseName = "Ende"
             notifyPhaseEnded(phaseName: "Cycle")
             isMixing = false
-            mixprofile.counter = mixprofile.cycleCount
+            mixprofile.counter = 1
             return
         }
 
@@ -88,6 +89,7 @@ class CountdownTimer: ObservableObject {
     func runPauseCycle(index: Int) {
         phaseName = "Pause"
         notifyPhaseEnded(phaseName: "Mix")
+        runMinimize()
         isMixing = false
         remainingTime = mixprofile.pauseDurationInSeconds
         progress = 0
@@ -126,5 +128,65 @@ class CountdownTimer: ObservableObject {
         UNUserNotificationCenter.current().add(request)
         
     }
+    
+    func runMinimize() {
+        guard isLogicProRunning() else {
+            print("Logic Pro läuft nicht – Minimieren übersprungen.")
+            return
+        }
+        let minimizeScript = """
+        tell application "System Events"
+            set visible of process "Logic Pro" to false
+        end tell
+        """
+        let process = Process()
+        process.launchPath = "/usr/bin/osascript"
+        process.arguments = ["-e", minimizeScript]
+        process.launch()
+        process.terminationHandler = { proc in
+            print("AppleScript beendet mit Code \(proc.terminationStatus)")
+        }
 
+    }
+    
+    func runMaximize() {
+        guard isLogicProRunning() else {
+            print("Logic Pro läuft nicht – Aktivierung übersprungen.")
+            return
+        }
+
+        let script = """
+        tell application "System Events"
+            set visible of process "Logic Pro" to true
+            set frontmost of process "Logic Pro" to true
+        end tell
+        """
+
+        let process = Process()
+        process.launchPath = "/usr/bin/osascript"
+        process.arguments = ["-e", script]
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = pipe
+
+        process.launch()
+        process.waitUntilExit()
+
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        if let output = String(data: data, encoding: .utf8), !output.isEmpty {
+            print("AppleScript output: \(output)")
+        } else {
+            print("Kein Output vom Script – evtl. erfolgreich oder Fehlerlos.")
+        }
+
+        if process.terminationStatus != 0 {
+            print("Process returned non-zero exit code: \(process.terminationStatus)")
+        }
+    }
+    
+    func isLogicProRunning() -> Bool {
+        let runningApps = NSWorkspace.shared.runningApplications
+            return runningApps.contains { $0.localizedName == "Logic Pro" }
+    }
 }
