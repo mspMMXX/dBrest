@@ -9,33 +9,79 @@ import Foundation
 import SwiftUI
 import UserNotifications
 
+/// Handles the countdown logic for alternating mix and pause phases,
+/// including Logic Pro window automation and local notifications.
 class CountdownTimer: ObservableObject {
     
+    // MARK: - Observable properties for UI updates
     @Published var phaseName: String = "Mix"
     @Published var isMixing: Bool = false
     @Published var remainingTime: Int = 0
     @Published var progress: CGFloat = 0
     @Published var isPaused: Bool = false
-    
+
+    // MARK: - Internal state
     private var currentIndex: Int = 1
     private var elapsedMixTime = 0
-    private var elapsedPauseTime = 0
 
+    // MARK: - Timer and profile
     var timer: Timer?
     var mixprofile: Mixprofile
-    
+
+    // MARK: - Initialization
     init(mixprofile: Mixprofile) {
         self.mixprofile = mixprofile
     }
-    
+
+    // MARK: - Public control methods
+
+    /// Starts the timer from the first cycle.
     func startTimer() {
         runCycle(index: 1)
     }
 
-    func runCycle(index: Int, resume: Bool = false) {
+    /// Pauses the timer and marks the state.
+    func pauseTimer() {
+        timer?.invalidate()
+        isPaused = true
+    }
+
+    /// Resumes the timer depending on the current phase.
+    func resumeTimer() {
+        isPaused = false
+        if phaseName == "Mix" {
+            runCycle(index: currentIndex, resume: true)
+        } else if phaseName == "Pause" {
+            runPauseCycle(index: currentIndex)
+        }
+    }
+
+    /// Stops the timer and resets the state.
+    func stopTimer() {
+        timer?.invalidate()
+        isMixing = false
+        isPaused = false
+        progress = 0
+        remainingTime = 0
+        phaseName = "Stopped"
+        currentIndex = 1
+    }
+
+    /// Updates the current profile and resets timer state.
+    func updateProfile(to newProfile: Mixprofile) {
+        self.mixprofile = newProfile
+        self.progress = 0
+        self.remainingTime = newProfile.mixDurationInMinutes
+        self.phaseName = "Mix"
+    }
+
+    // MARK: - Cycle handling
+
+    /// Runs a single mix cycle.
+    private func runCycle(index: Int, resume: Bool = false) {
         if !resume { currentIndex = index }
         if index > mixprofile.cycleCount {
-            phaseName = "Ende"
+            phaseName = "Done"
             notifyPhaseEnded(phaseName: "Cycle")
             isMixing = false
             mixprofile.counter = 1
@@ -46,6 +92,7 @@ class CountdownTimer: ObservableObject {
         phaseName = "Mix"
         notifyPhaseEnded(phaseName: "Pause")
         isMixing = true
+
         let totalTime = mixprofile.mixDurationInSeconds
         if !resume { elapsedMixTime = 0 }
         let step = 1.0 / CGFloat(totalTime)
@@ -61,46 +108,24 @@ class CountdownTimer: ObservableObject {
             }
         }
     }
-    
-    func pauseTimer() {
-        timer?.invalidate()
-        isPaused = true
-    }
 
-    func resumeTimer() {
-        isPaused = false
-        if phaseName == "Mix" {
-            runCycle(index: currentIndex, resume: true)
-        } else if phaseName == "Pause" {
-            runPauseCycle(index: currentIndex)
-        }
-    }
-    
-    func stopTimer() {
-        timer?.invalidate()
-        isMixing = false
-        isPaused = false
-        progress = 0
-        remainingTime = 0
-        phaseName = "Gestoppt"
-        currentIndex = 1
-    }
-
-    func runPauseCycle(index: Int) {
+    /// Runs the pause phase after a mix cycle.
+    private func runPauseCycle(index: Int) {
         phaseName = "Pause"
         notifyPhaseEnded(phaseName: "Mix")
         runMinimize()
         isMixing = false
         remainingTime = mixprofile.pauseDurationInSeconds
         progress = 0
+
         var elapsed = 0
-        let pauseStep = 1.0 / CGFloat(mixprofile.pauseDurationInSeconds)
-        
+        let step = 1.0 / CGFloat(mixprofile.pauseDurationInSeconds)
+
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { t in
             elapsed += 1
             self.remainingTime = self.mixprofile.pauseDurationInSeconds - elapsed
-            self.progress = CGFloat(elapsed) * pauseStep
-            
+            self.progress = CGFloat(elapsed) * step
+
             if elapsed >= self.mixprofile.pauseDurationInSeconds {
                 t.invalidate()
                 self.mixprofile.counter += 1
@@ -108,50 +133,51 @@ class CountdownTimer: ObservableObject {
             }
         }
     }
-    
-    func updateProfile(to newProfile: Mixprofile) {
-        self.mixprofile = newProfile
-        self.progress = 0
-        self.remainingTime = newProfile.mixDurationInMinutes
-        self.phaseName = "Mix"
-    }
-    
+
+    // MARK: - Notifications
+
+    /// Sends a local notification when a phase ends.
     func notifyPhaseEnded(phaseName: String) {
         let content = UNMutableNotificationContent()
-        content.title = "🔔 \(phaseName) Phase beendet!"
-        content.body = "Die \(phaseName)-Phase ist vorbei"
+        content.title = "🔔 \(phaseName) phase ended!"
+        content.body = "The \(phaseName) phase is over."
         content.sound = .default
-        
+
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
-        
+
         UNUserNotificationCenter.current().add(request)
-        
     }
-    
+
+    // MARK: - Logic Pro window control
+
+    /// Minimizes Logic Pro using AppleScript.
     func runMinimize() {
         guard isLogicProRunning() else {
-            print("Logic Pro läuft nicht – Minimieren übersprungen.")
+            print("Logic Pro is not running – skipping minimize.")
             return
         }
-        let minimizeScript = """
+
+        let script = """
         tell application "System Events"
             set visible of process "Logic Pro" to false
         end tell
         """
+
         let process = Process()
         process.launchPath = "/usr/bin/osascript"
-        process.arguments = ["-e", minimizeScript]
+        process.arguments = ["-e", script]
         process.launch()
-        process.terminationHandler = { proc in
-            print("AppleScript beendet mit Code \(proc.terminationStatus)")
-        }
 
+        process.terminationHandler = { proc in
+            print("AppleScript finished with code \(proc.terminationStatus)")
+        }
     }
-    
+
+    /// Brings Logic Pro to front using AppleScript.
     func runMaximize() {
         guard isLogicProRunning() else {
-            print("Logic Pro läuft nicht – Aktivierung übersprungen.")
+            print("Logic Pro is not running – skipping maximize.")
             return
         }
 
@@ -177,16 +203,18 @@ class CountdownTimer: ObservableObject {
         if let output = String(data: data, encoding: .utf8), !output.isEmpty {
             print("AppleScript output: \(output)")
         } else {
-            print("Kein Output vom Script – evtl. erfolgreich oder Fehlerlos.")
+            print("No output from script – likely successful or silent.")
         }
 
         if process.terminationStatus != 0 {
-            print("Process returned non-zero exit code: \(process.terminationStatus)")
+            print("AppleScript returned non-zero exit code: \(process.terminationStatus)")
         }
     }
-    
+
+    /// Checks if Logic Pro is currently running.
     func isLogicProRunning() -> Bool {
-        let runningApps = NSWorkspace.shared.runningApplications
-            return runningApps.contains { $0.localizedName == "Logic Pro" }
+        NSWorkspace.shared.runningApplications.contains {
+            $0.localizedName == "Logic Pro"
+        }
     }
 }

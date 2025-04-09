@@ -8,17 +8,37 @@
 import Foundation
 import SwiftData
 
+//Model class representing a mix/pause cycle profile
 @Model
 class Mixprofile: Hashable {
     
+    /// Unique identifier for the profile.
     var id: UUID = UUID()
+    
+    /// Duration of the mix phase in minutes.
     var mixDurationInMinutes: Int = 5
+    
+    /// Duration of the pause phase in minutes.
     var pauseDurationInMinutes: Int = 1
+    
+    /// Display name for the profile.
     var name: String
-    var mixDurationInSeconds: Int { mixDurationInMinutes * 60 }
-    var pauseDurationInSeconds: Int { pauseDurationInMinutes * 60 }
+
+    /// Number of mix/pause cycles to run.
     var cycleCount: Int
+
+    /// Current progress counter (can be used to track cycles).
     var counter: Int = 1
+
+    /// Computed duration of the mix phase in seconds.
+    var mixDurationInSeconds: Int {
+        mixDurationInMinutes * 60
+    }
+
+    /// Computed duration of the pause phase in seconds.
+    var pauseDurationInSeconds: Int {
+        pauseDurationInMinutes * 60
+    }
     
     init(name: String, mixDurationInMinutes: Int, pauseDurationInMinutes: Int, cycleCount: Int) {
         guard !name.isEmpty else {

@@ -8,89 +8,42 @@
 import SwiftUI
 import SwiftData
 
+/// Main entry view showing the countdown UI and profile management.
 struct MainView: View {
     
-    @State private var isRunning:  Bool = false
-    @State var showSettings: Bool = false
-    @State private var selectedProfile: Mixprofile
+    // MARK: - State
+    @State private var isRunning: Bool = false
+    @State private var showSettings: Bool = false
     @State private var showDeleteAlert: Bool = false
+    @State private var selectedProfile: Mixprofile
     @StateObject private var countdownTimer: CountdownTimer
-    
+
+    // MARK: - Data
     @Query var mixprofiles: [Mixprofile]
     @Environment(\.modelContext) var modelContext
-    
-    init () {
-        let initialMixProfile = Mixprofile(name: "Default", mixDurationInMinutes: 5, pauseDurationInMinutes: 2, cycleCount: 4)
-        _selectedProfile = State(initialValue: initialMixProfile)
-        _countdownTimer = StateObject(wrappedValue: CountdownTimer(mixprofile: initialMixProfile))
+
+    // MARK: - Init
+    init() {
+        let initialProfile = Mixprofile(name: "Default", mixDurationInMinutes: 5, pauseDurationInMinutes: 2, cycleCount: 4)
+        _selectedProfile = State(initialValue: initialProfile)
+        _countdownTimer = StateObject(wrappedValue: CountdownTimer(mixprofile: initialProfile))
     }
-    
+
+    // MARK: - View
     var body: some View {
         VStack {
-            ZStack {
-                HStack {
-                    Spacer()
-                    Button {
-                        showSettings = true
-                    } label: {
-                        Image(systemName: "plus.circle")
-                    }
-                    .sheet(isPresented: $showSettings) {
-                        MixprofileSettingView(showSettings: $showSettings)
-                    }
+            profilePickerToolbar
 
-                    Button {
-                        showDeleteAlert = true
-                    } label: {
-                        Image(systemName: "trash")
-                    }
-                    .alert("Löschen?", isPresented: $showDeleteAlert) {
-                        Button {
-                            modelContext.delete(selectedProfile)
-                            if let first = mixprofiles.first {
-                                selectedProfile = first
-                                countdownTimer.updateProfile(to: first)
-                            }
-                            showDeleteAlert = false
-                        } label: {
-                            Text("Löschen")
-                        }
-                        Button {
-                            showDeleteAlert = false
-                        } label: {
-                            Text("Abbrechen")
-                        }
-                    } message: {
-                        Text("Möchten Sie das Mixprofil -\(selectedProfile.name)- wirklich löschen?")
-                    }
-
-                }
-                
-                Picker("", selection: $selectedProfile) {
-                    ForEach(mixprofiles, id: \.name) { profile in
-                        Text("\(profile.name) - \(profile.mixDurationInMinutes) min. \(profile.pauseDurationInMinutes) min. \(profile.cycleCount) cycles").tag(profile)
-                            .font(.headline)
-                    }
-                }
-                .onChange(of: selectedProfile) {
-                    countdownTimer.updateProfile(to: selectedProfile)
-                    isRunning = false
-                }
-                .pickerStyle(.menu)
-                .frame(maxWidth: 250)
-                .padding(20)
-            }
-            
-            Text("Phase: \(countdownTimer.mixprofile.counter)/\(countdownTimer.mixprofile.cycleCount) ")
-                .padding(.bottom, 20)
+            // Shows current phase progress (e.g. 2 / 4)
+            Text("Phase: \(countdownTimer.mixprofile.counter)/\(countdownTimer.mixprofile.cycleCount)")
                 .font(.headline)
+                .padding(.bottom, 20)
             
             ZStack {
                 if isRunning {
                     CircularTimerView(countdownTimer: countdownTimer)
                         .padding(20)
                 } else {
-                    
                     Button {
                         isRunning.toggle()
                     } label: {
@@ -102,12 +55,66 @@ struct MainView: View {
             }
             .frame(minWidth: 450, minHeight: 250)
         }
+        .padding(20)
         .onAppear {
+            // Auto-select first available profile on launch
             if let first = mixprofiles.first {
                 selectedProfile = first
                 countdownTimer.updateProfile(to: first)
             }
         }
-        .padding(20)
+    }
+
+    // MARK: - Toolbar with Picker and Actions
+    private var profilePickerToolbar: some View {
+        ZStack {
+            HStack {
+                Spacer()
+                Button {
+                    showSettings = true
+                } label: {
+                    Image(systemName: "plus.circle")
+                }
+                .sheet(isPresented: $showSettings) {
+                    MixprofileSettingView(showSettings: $showSettings)
+                }
+
+                Button {
+                    showDeleteAlert = true
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .alert("Delete?", isPresented: $showDeleteAlert) {
+                    Button("Delete", role: .destructive) {
+                        modelContext.delete(selectedProfile)
+                        if let first = mixprofiles.first {
+                            selectedProfile = first
+                            countdownTimer.updateProfile(to: first)
+                        }
+                        showDeleteAlert = false
+                    }
+                    Button("Cancel", role: .cancel) {
+                        showDeleteAlert = false
+                    }
+                } message: {
+                    Text("Are you sure you want to delete profile \"\(selectedProfile.name)\"?")
+                }
+            }
+
+            Picker("", selection: $selectedProfile) {
+                ForEach(mixprofiles, id: \.name) { profile in
+                    Text("\(profile.name) - \(profile.mixDurationInMinutes) / \(profile.pauseDurationInMinutes) min - \(profile.cycleCount) cycles")
+                        .tag(profile)
+                        .font(.headline)
+                }
+            }
+            .onChange(of: selectedProfile) {
+                countdownTimer.updateProfile(to: selectedProfile)
+                isRunning = false
+            }
+            .pickerStyle(.menu)
+            .frame(maxWidth: 250)
+            .padding(20)
+        }
     }
 }

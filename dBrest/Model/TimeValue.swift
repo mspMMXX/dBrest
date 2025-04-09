@@ -5,7 +5,7 @@
 //  Created by Markus Platter on 31.03.25.
 //
 
-enum TimeValues: Int, CaseIterable, Identifiable {
+enum TimeValue: Int, CaseIterable, Identifiable {
     case one = 1
     case five = 5
     case ten = 10
@@ -14,13 +14,19 @@ enum TimeValues: Int, CaseIterable, Identifiable {
     case twentyFive = 25
     case thirty = 30
     case thirtyFive = 35
-    case fourty = 40
+    case forty = 40
     case fourtyFive = 45
     case fifty = 50
     case fiftyFive = 55
     case sixty = 60
     
-    var id: Int {rawValue}
-    var label: String {"\(rawValue) Minuten"}
-    var seconds: Int {rawValue * 60}
+    var id: Int { rawValue }
+    
+    var label: String {
+        "\(rawValue) Minuten"
+    }
+    
+    var seconds: Int {
+        rawValue * 60
+    }
 }
